@@ -50,5 +50,14 @@ AVAILABLE_MODELS: List[Dict[str, Any]] = [
 DEFAULT_MODEL_ID = os.getenv("DEFAULT_MODEL", "inception/mercury-decide:free")
 
 def get_api_key() -> str:
-    """Retrieve OpenRouter API key from environment."""
-    return os.getenv("OPENROUTER_API_KEY", "").strip()
+    """Retrieve OpenRouter API key from environment or Streamlit secrets."""
+    env_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if env_key:
+        return env_key
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "OPENROUTER_API_KEY" in st.secrets:
+            return str(st.secrets["OPENROUTER_API_KEY"]).strip()
+    except Exception:
+        pass
+    return ""
