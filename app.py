@@ -376,22 +376,43 @@ if execute_button:
     if not api_key_input:
         st.error("Please enter your OpenRouter API Key in the sidebar.")
     else:
-        # Prepare state
-        st.session_state.state_input = state_input_area
+        # Check if raw JSON editor was modified and sync it
+        raw_json_val = st.session_state.get("raw_json_editor")
+        final_questions = dict(st.session_state.questions_input)
         final_state: Union[str, Dict[str, Any]] = state_input_area
-        try:
-            if state_input_area.strip().startswith("{") and state_input_area.strip().endswith("}"):
-                final_state = json.loads(state_input_area)
-        except Exception:
-            final_state = state_input_area
+
+        if raw_json_val:
+            try:
+                parsed_raw = json.loads(raw_json_val)
+                if "state" in parsed_raw:
+                    final_state = parsed_raw["state"]
+                    st.session_state.state_input = (
+                        final_state
+                        if isinstance(final_state, str)
+                        else json.dumps(final_state, indent=2)
+                    )
+                if "questions" in parsed_raw and isinstance(parsed_raw["questions"], dict):
+                    final_questions = parsed_raw["questions"]
+                    st.session_state.questions_input = final_questions
+                if "model" in parsed_raw and parsed_raw["model"]:
+                    active_model_id = parsed_raw["model"]
+            except Exception:
+                pass
+
+        if isinstance(final_state, str):
+            try:
+                if final_state.strip().startswith("{") and final_state.strip().endswith("}"):
+                    final_state = json.loads(final_state)
+            except Exception:
+                pass
 
         client = DecisionClient(api_key=api_key_input)
-        with st.spinner(f"Evaluating {len(st.session_state.questions_input)} decision questions with {active_model_id}..."):
+        with st.spinner(f"Evaluating {len(final_questions)} decision questions with {active_model_id}..."):
             try:
                 response = client.evaluate(
                     model=active_model_id,
                     state=final_state,
-                    questions=st.session_state.questions_input,
+                    questions=final_questions,
                 )
                 st.session_state.last_response = response
                 st.success("Decision evaluated successfully!")

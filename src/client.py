@@ -45,12 +45,43 @@ class DecisionClient:
             "X-Title": "Decision Models Streamlit UI",
         }
 
-        # Sanitize questions: OpenRouter rejects 'criteria': null
+        # Sanitize and normalize questions for OpenRouter System One schema
         clean_questions = {}
         for q_id, q_val in questions.items():
             q_clean = dict(q_val)
-            if q_clean.get("criteria") is None:
-                q_clean.pop("criteria", None)
+            q_type = q_clean.get("type", "noul")
+
+            # Ensure instructions is always present
+            if not q_clean.get("instructions"):
+                q_clean["instructions"] = f"Evaluate {q_id.replace('_', ' ')} based on the state."
+
+            # Normalize choice: convert 'options' list to 'criteria' dict
+            if q_type == "choice":
+                if "options" in q_clean and "criteria" not in q_clean:
+                    opts = q_clean.pop("options")
+                    if isinstance(opts, list):
+                        q_clean["criteria"] = {str(opt): f"Category: {opt}" for opt in opts}
+                elif "criteria" not in q_clean or not isinstance(q_clean.get("criteria"), dict):
+                    q_clean["criteria"] = {"default": "Default option"}
+
+            # Normalize score: convert 'range' [min, max] to 'criteria' list
+            elif q_type == "score":
+                if "range" in q_clean and "criteria" not in q_clean:
+                    rng = q_clean.pop("range")
+                    if isinstance(rng, list) and len(rng) == 2:
+                        try:
+                            s, e = int(rng[0]), int(rng[1])
+                            q_clean["criteria"] = [f"Level {i}" for i in range(s, e + 1)]
+                        except Exception:
+                            q_clean["criteria"] = [str(x) for x in rng]
+                elif "criteria" not in q_clean or not isinstance(q_clean.get("criteria"), list):
+                    q_clean["criteria"] = ["Level 1", "Level 2", "Level 3", "Level 4", "Level 5"]
+
+            # Normalize noul: remove criteria if null
+            elif q_type == "noul":
+                if q_clean.get("criteria") is None:
+                    q_clean.pop("criteria", None)
+
             clean_questions[q_id] = q_clean
 
         payload = {
