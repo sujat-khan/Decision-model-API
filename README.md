@@ -1,5 +1,10 @@
 # OpenRouter System One Decision Models & Streamlit Playground ⚡
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://decision-model-api.streamlit.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/sujat-khan/Decision-model-API)
+
+🌐 **Live Deployed Application:** **[https://decision-model-api.streamlit.app/](https://decision-model-api.streamlit.app/)**
+
 An interactive testing and evaluation suite for OpenRouter **System One Decision Models**, including:
 - **`inception/mercury-decide:free`** (Inception Labs - Free Tier)
 - **`inception/mercury-decide`**
