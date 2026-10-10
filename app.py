@@ -95,18 +95,12 @@ with st.sidebar:
     st.markdown("### ⚡ System One Engine")
     st.caption("Structured Decision Models via OpenRouter")
 
-    # API Key Handling
-    env_key = get_api_key()
-    api_key_input = st.text_input(
-        "OpenRouter API Key",
-        value=env_key,
-        type="password",
-        help="Reads from OPENROUTER_API_KEY in .env by default.",
-    )
+    # API Key Handling (read from env / Streamlit secrets only)
+    api_key_input = get_api_key()
     if not api_key_input:
-        st.warning("⚠️ Enter OpenRouter API Key to execute requests.")
+        st.warning("⚠️ API Key not found. Set `OPENROUTER_API_KEY` in environment or Streamlit secrets.")
     else:
-        st.success("API Key detected")
+        st.success("🔑 API Key loaded")
 
     st.markdown("---")
 
