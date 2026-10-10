@@ -1,4 +1,5 @@
 """Streamlit UI Playground for OpenRouter System One Decision Models."""
+import copy
 import json
 import streamlit as st
 from typing import Dict, Any, Union
@@ -75,16 +76,11 @@ st.markdown(
 
 # Initialize session state for scenario
 if "current_preset_key" not in st.session_state:
-    st.session_state.current_preset_key = "agent_guardrail"
+    st.session_state.current_preset_key = None
 if "state_input" not in st.session_state:
-    preset = PRESETS["agent_guardrail"]
-    st.session_state.state_input = (
-        preset["state"]
-        if isinstance(preset["state"], str)
-        else json.dumps(preset["state"], indent=2)
-    )
+    st.session_state.state_input = ""
 if "questions_input" not in st.session_state:
-    st.session_state.questions_input = PRESETS["agent_guardrail"]["questions"]
+    st.session_state.questions_input = {}
 if "last_response" not in st.session_state:
     st.session_state.last_response = None
 
@@ -177,7 +173,7 @@ with st.sidebar:
             if isinstance(preset_data["state"], str)
             else json.dumps(preset_data["state"], indent=2)
         )
-        st.session_state.questions_input = preset_data["questions"]
+        st.session_state.questions_input = copy.deepcopy(preset_data["questions"])
         st.session_state.last_response = None
         st.rerun()
 
@@ -356,7 +352,7 @@ with tab_json:
                 if isinstance(parsed["state"], str)
                 else json.dumps(parsed["state"], indent=2)
             )
-            st.session_state.questions_input = parsed.get("questions", {})
+            st.session_state.questions_input = copy.deepcopy(parsed.get("questions", {}))
             st.success("Synchronized JSON into Form Builder successfully!")
             st.rerun()
         except Exception as e:
@@ -376,28 +372,9 @@ if execute_button:
     if not api_key_input:
         st.error("Please enter your OpenRouter API Key in the sidebar.")
     else:
-        # Check if raw JSON editor was modified and sync it
-        raw_json_val = st.session_state.get("raw_json_editor")
-        final_questions = dict(st.session_state.questions_input)
+        # Use form-built questions as the source of truth
+        final_questions = copy.deepcopy(st.session_state.questions_input)
         final_state: Union[str, Dict[str, Any]] = state_input_area
-
-        if raw_json_val:
-            try:
-                parsed_raw = json.loads(raw_json_val)
-                if "state" in parsed_raw:
-                    final_state = parsed_raw["state"]
-                    st.session_state.state_input = (
-                        final_state
-                        if isinstance(final_state, str)
-                        else json.dumps(final_state, indent=2)
-                    )
-                if "questions" in parsed_raw and isinstance(parsed_raw["questions"], dict):
-                    final_questions = parsed_raw["questions"]
-                    st.session_state.questions_input = final_questions
-                if "model" in parsed_raw and parsed_raw["model"]:
-                    active_model_id = parsed_raw["model"]
-            except Exception:
-                pass
 
         if isinstance(final_state, str):
             try:
